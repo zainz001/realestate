@@ -1,7 +1,8 @@
 import User from "../modules/user.module.js";
 import bcryptjs from 'bcryptjs';
-
-export const signup = async (req, res) => {
+import { errorhandler } from "../utils/error.js";
+import jwt from "jsonwebtoken";
+export const signup = async (req, res, next) => {
     const { username, email, password } = req.body;
     const hashedpassword = bcryptjs.hashSync(password, 10);
     const newuser = new User({ username, email, password: hashedpassword });
@@ -10,18 +11,59 @@ export const signup = async (req, res) => {
         await newuser.save();
         res.status(201).json('User created successfully');
     } catch (error) {
-        if (error.code === 11000) {
-            // MongoDB duplicate key error (unique constraint violated)
-            if (error.keyPattern.email) {
-                res.status(409).json('Email already exists');
-            } else if (error.keyPattern.username) {
-                res.status(409).json('Username already exists');
-            } else {
-                res.status(409).json('Duplicate key violation');
-            }
-        } else {
-            // Other errors
-            res.status(500).json(error.message);
-        }
+        next(error);
     }
 };
+
+
+export const signin = async (req, res, next) => {
+    const { email, password } = req.body;
+    try {
+        const validuser = await User.findOne({ email });
+        if (!validuser) return next(errorhandler(404, 'user not found!'));
+        const validpassword = bcryptjs.compareSync(password, validuser.password);
+        if (!validpassword) return next(errorhandler(404, 'Wrong credential'));
+        const token = jwt.sign({ id: validuser._id }, process.env.JWT_SECRET)
+        const { password: pass, ...rest } = validuser._doc;
+        res.cookie('token', token, { httpOnly: true }).status(200).json(rest);
+    } catch (error) {
+        next(error);
+    }
+
+}
+
+export const google = async (req, res, next) => {
+    try {
+      const user = await User.findOne({ email: req.body.email });
+      if (user) {
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        const { password: pass, ...rest } = user._doc;
+        res
+          .cookie('access_token', token, { httpOnly: true })
+          .status(200)
+          .json(rest);
+      } else {
+        const generatedPassword =
+          Math.random().toString(36).slice(-8) +
+          Math.random().toString(36).slice(-8);
+        const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+        const newUser = new User({
+          username:
+            req.body.name.split(' ').join('').toLowerCase() +
+            Math.random().toString(36).slice(-4),
+          email: req.body.email,
+          password: hashedPassword,
+          avatar: req.body.photo,
+        });
+        await newUser.save();
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+        const { password: pass, ...rest } = newUser._doc;
+        res
+          .cookie('access_token', token, { httpOnly: true })
+          .status(200)
+          .json(rest);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
