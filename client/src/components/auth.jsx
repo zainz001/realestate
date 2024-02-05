@@ -3,10 +3,11 @@ import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
 import { app } from '../firebase';
 import { useDispatch } from 'react-redux';
 import { signInSuccess } from '../redux/userslice';
+import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const dispatch = useDispatch(); // Move the hook call here
-
+const navigate=useNavigate();
   const handleClick = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -28,6 +29,7 @@ const Auth = () => {
       
       const data = await res.json();
       dispatch(signInSuccess(data));
+      navigate('/');
     } catch (error) {
       console.log(error);
     }
