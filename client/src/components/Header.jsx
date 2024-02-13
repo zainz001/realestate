@@ -22,7 +22,7 @@ export default function Header() {
           <input className=' focus:outline-none w-24 sm:w-64  bg-transparent' type="text" placeholder='Search...' />
           <FaSearch className=' text-slate-400 ' />
 
-        </form>
+        </form> 
         <ul className='flex gap-4 ' >
           <Link to='/'>
             <li className=' hidden  sm:inline  text-slate-500 hover:underline '>Home</li>

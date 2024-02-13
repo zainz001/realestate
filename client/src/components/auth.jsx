@@ -38,7 +38,7 @@ const navigate=useNavigate();
   return (
     <button
       onClick={handleClick}
-      className='bg-red-600 text-white p-3 rounded-lg uppercase hover:opacity-95'
+      className='bg-red-600 text-white p-3 rounded-full uppercase hover:opacity-95'
       type='button'
     >
       continue with google
