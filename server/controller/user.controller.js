@@ -1,6 +1,7 @@
 import User from "../modules/user.module.js";
 import { errorhandler } from "../utils/error.js"
 import bcryptjs from 'bcryptjs'
+import Listing from "../modules/listingmodule.js"
 export const updateuser = async (req, res, next) => {
     if (req.user.id !== req.params.id)
       return next(errorhandler(401, 'You can only update your own account!'));
@@ -41,3 +42,20 @@ export const updateuser = async (req, res, next) => {
       next(error);
     }
   };
+
+
+export const getUserlisting=async (req,res,next)=>{
+if (req.user.id ===req.params.id)
+{
+try {
+  const listing= await Listing.find({userRef:req.params.id})
+  res.status(200).json(listing);
+} catch (error) {
+  next(error);
+}
+
+}
+else{
+  return next(errorhandler(401,'you can see only your own listing'))
+}
+  }
