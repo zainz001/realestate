@@ -14,13 +14,29 @@ export default function Signout() {
       ...formData,
       [e.target.id]: e.target.value,
     });
+    setError(null); // Clear the error message when the user starts typing
   }
 
   const handleSubmit = async (e) => {
-    try {
-      e.preventDefault();
-      setLoading(true);
+    e.preventDefault();
 
+    // Validate form inputs
+    if (!formData.username) {
+      setError('Please insert username');
+      return;
+    }
+    if (!formData.email) {
+      setError('Please insert email');
+      return;
+    }
+    if (!formData.password) {
+      setError('Please insert password');
+      return;
+    }
+
+    try {
+      setLoading(true);
+     
       const res = await fetch('/server/auth/signup', {
         method: 'POST',
         headers: {
