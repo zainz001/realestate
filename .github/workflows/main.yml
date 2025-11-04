@@ -18,13 +18,17 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1   # ✅ match your bucket region
+          aws-region: eu-north-1   # ✅ your actual bucket region
 
       - name: Install dependencies and build React app
         working-directory: ./client
         run: |
-          npm ci
+          echo "📦 Installing dependencies..."
+          npm ci || npm install
+          echo "🏗️ Building project..."
           npm run build
+          echo "✅ Build complete. Contents of ./client/build:"
+          ls -al ./build
 
       - name: Deploy to S3
         run: |
