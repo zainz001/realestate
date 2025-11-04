@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Auth = () => {
   const dispatch = useDispatch(); // Move the hook call here
-const navigate=useNavigate();
+  const navigate = useNavigate();
   const handleClick = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -24,9 +24,9 @@ const navigate=useNavigate();
           photo: result.user.photoURL,
         }),
       });
-      
-      
-      
+
+
+
       const data = await res.json();
       dispatch(signInSuccess(data));
       navigate('/');
