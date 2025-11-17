@@ -14,8 +14,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
       # 3️⃣ Install dependencies and build
-     
+      - name: Install dependencies and build React app
+        working-directory: ./client
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci || npm install
+          echo "🏗️ Building project..."
+          npm run build
+          echo "✅ Build complete. Contents of ./client/dist:"
+          ls -al ./dist
 
       # 4️⃣ Upload build to EC2
       - name: Upload dist folder to EC2
@@ -36,10 +50,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/client
-            echo "📦 Installing dependencies..."
-            npm ci || npm install
-            echo "🏗️ Building project..."
-            npm run build
-            echo "✅ Build complete. Contents of ./client/dist:"
-            ls -al ./dist
             pm2 restart all || pm2 start npm --name "client" -- run start
