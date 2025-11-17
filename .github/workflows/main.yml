@@ -13,22 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-      - name: Install Dependencies
+     
+      - name: Install dependencies and build React app
         working-directory: ./client
-        run: npm install
-
-      - name: Build Project
-        run: npm run build
-
-      # Optional: Upload build folder as artifact (for debugging)
-      - name: Upload build
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: build/   # change to dist if using React/Vite
-
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci || npm install
+          echo "🏗️ Building project..."
+          npm run build
+          echo "✅ Build complete. Contents of ./client/build:"
+          ls -al ./build
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
