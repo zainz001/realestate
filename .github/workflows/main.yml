@@ -4,29 +4,34 @@ on:
   push:
     branches:
       - main
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-   
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-     
-      - name: Install dependencies and build React app
+      - name: Install dependencies and build React app (Vite)
         working-directory: ./client
         run: |
           echo "📦 Installing dependencies..."
           npm ci || npm install
           echo "🏗️ Building project..."
           npm run build
-          echo "✅ Build complete. Contents of ./client/build:"
-          ls -al ./build
+          echo "✅ Build complete. Contents of ./client/dist:"
+          ls -al ./dist
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}   # FIXED
-      
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /var/www/your-folder
+            git pull origin main
+            npm install --production
+            npm run build
+            pm2 restart all
