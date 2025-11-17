@@ -23,7 +23,6 @@ jobs:
       - name: Build Project
         run: npm run build
 
-      # Optional: Upload build folder as artifact (for debugging)
       - name: Upload build
         uses: actions/upload-artifact@v3
         with:
