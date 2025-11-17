@@ -23,8 +23,9 @@ jobs:
       - name: Build Project
         run: npm run build
 
+      # Optional: Upload build folder as artifact (for debugging)
       - name: Upload build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build
           path: build/   # change to dist if using React/Vite
@@ -34,10 +35,10 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          key: ${{ secrets.EC2_SSH_KEY }}   # FIXED
           script: |
-            cd /var/www/your-folder        # your EC2 folder
+            cd /var/www/your-folder
             git pull origin main
             npm install --production
-            npm run build                  # build on EC2 too (optional)
+            npm run build
             pm2 restart all
