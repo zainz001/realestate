@@ -29,9 +29,4 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}   # FIXED
-          script: |
-            cd /var/www/your-folder
-            git pull origin main
-            npm install --production
-            npm run build
-            pm2 restart all
+      
