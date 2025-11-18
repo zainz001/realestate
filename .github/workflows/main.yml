@@ -14,7 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-    
       # 3️⃣ Install dependencies and build React app
       - name: Build React app
         working-directory: ./client
@@ -24,24 +23,27 @@ jobs:
           echo "Build output:"
           ls -la dist
 
-      # 4️⃣ Upload build to EC2 Nginx folder
-      - name: Upload React build to EC2
+      # 4️⃣ Upload React build to EC2 temp folder
+      - name: Upload React build to EC2 temp folder
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "client/dist/*"
-          target: "/var/www/html/"
+          target: "/home/ubuntu/react_tmp/"   # temp folder under your user
           strip_components: 1
 
-      # 5️⃣ Restart Nginx to serve new React files
-      - name: Restart Nginx on EC2
+      # 5️⃣ Move React build to Nginx folder
+      - name: Move React build to Nginx folder
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            sudo mkdir -p /var/www/html
+            sudo rm -rf /var/www/html/*
+            sudo mv /home/ubuntu/react_tmp/* /var/www/html/
             sudo systemctl restart nginx
             echo "✅ Deployment complete!"
