@@ -1,4 +1,4 @@
-name: Build & Deploy React Frontend to EC2
+name: Deploy-React-To-EC2
 
 on:
   push:
@@ -6,42 +6,58 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout Code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
-      
-      # 3️⃣ Install & Build React App (client folder)
-      - name: Install & Build React App
+      # 2️⃣ Build React App
+      - name: Build React App
         working-directory: ./client
         run: |
           npm install
           npm run build
-          echo "Build output:"
+          echo "Build complete"
           ls -la dist || ls -la build
 
-      # 4️⃣ Upload build files to EC2 (Nginx folder)
+      # 3️⃣ Upload React build to EC2
       - name: Upload build to EC2
-        uses: appleboy/scp-action@v0.1.6
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "client/dist/*,client/build/*"
-          target: "/var/www/html/"
-          strip_components: 1
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.EC2_HOST }}
+          REMOTE_USER: ${{ secrets.EC2_USER }}
+          SOURCE: "client/dist/"     # or client/build if using CRA
+          TARGET: "/home/${{ secrets.EC2_USER }}/react_build"
 
-      # 5️⃣ Restart Nginx on EC2
-      - name: Restart Nginx
-        uses: appleboy/ssh-action@v0.1.10
+      # 4️⃣ Run Commands on EC2 (Move build + Restart Nginx)
+      - name: Execute remote SSH commands
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Install nginx if not present
+            sudo apt-get update -y
+            sudo apt-get install -y nginx
+
+            # Make sure folder exists
+            sudo mkdir -p /home/${{ secrets.EC2_USER }}/react_build
+
+            # Clear old files
+            sudo rm -rf /var/www/html/*
+
+            # Copy new files
+            sudo cp -r /home/${{ secrets.EC2_USER }}/react_build/* /var/www/html/
+
+            # Set permissions
+            sudo chown -R www-data:www-data /var/www/html
+
+            # Restart nginx
             sudo systemctl restart nginx
-            echo "✅ Deployment complete!"
+
+            echo "🚀 React Deployed Successfully!"
