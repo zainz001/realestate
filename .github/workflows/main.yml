@@ -14,24 +14,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js for building React
+      # 2️⃣ Setup Node.js only for building React
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18"
 
-      # 3️⃣ Install dependencies and build React app
+      # 3️⃣ Install & Build React App
       - name: Build React app
         working-directory: ./client
         run: |
-          echo "📦 Installing dependencies..."
-          npm ci || npm install
-          echo "🏗️ Building project..."
+          npm install
           npm run build
-          echo "✅ Build complete. Contents of ./client/dist:"
-          ls -al ./dist
+          ls -la dist
 
-      # 4️⃣ Upload build to EC2
+      # 4️⃣ Upload React build to EC2 Nginx folder
       - name: Upload build folder to EC2
         uses: appleboy/scp-action@v0.1.6
         with:
@@ -39,10 +36,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "client/dist/*"
-          target: "/var/www/html/"   # your EC2 web server folder
+          target: "/var/www/html/"
           strip_components: 1
 
-      # 5️⃣ Restart Nginx to serve new React files
+      # 5️⃣ Restart Nginx
       - name: Restart Nginx on EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -51,3 +48,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             sudo systemctl restart nginx
+            echo "✅ Deployment complete!"
