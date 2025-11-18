@@ -1,4 +1,4 @@
-name: Deploy-React-To-EC2
+name: Build & Deploy React Frontend to EC2
 
 on:
   push:
@@ -6,58 +6,47 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout Code
+      # 1️⃣ Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      # 2️⃣ Build React App
-      - name: Build React App
+      # 2️⃣ Setup Node.js for building React
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      # 3️⃣ Install dependencies and build React
+      - name: Build React app
         working-directory: ./client
         run: |
-          npm install
+          npm ci
           npm run build
-          echo "Build complete"
-          ls -la dist || ls -la build
+          echo "Build output:"
+          ls -la build
 
-      # 3️⃣ Upload React build to EC2
-      - name: Upload build to EC2
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.EC2_HOST }}
-          REMOTE_USER: ${{ secrets.EC2_USER }}
-          SOURCE: "client/dist/"     # or client/build if using CRA
-          TARGET: "/home/${{ secrets.EC2_USER }}/react_build"
+      # 4️⃣ Upload build to EC2 Nginx folder
+      - name: Upload React build to EC2
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}      # Your EC2 public IP
+          username: ${{ secrets.EC2_USER }}  # Usually "ubuntu"
+          key: ${{ secrets.EC2_SSH_KEY }}    # Your PEM key (saved as GitHub secret)
+          source: "client/build/*"
+          target: "/var/www/html/"
+          strip_components: 1
 
-      # 4️⃣ Run Commands on EC2 (Move build + Restart Nginx)
-      - name: Execute remote SSH commands
-        uses: appleboy/ssh-action@master
+      # 5️⃣ Restart Nginx to serve new React files
+      - name: Restart Nginx on EC2
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Install nginx if not present
-            sudo apt-get update -y
-            sudo apt-get install -y nginx
-
-            # Make sure folder exists
-            sudo mkdir -p /home/${{ secrets.EC2_USER }}/react_build
-
-            # Clear old files
-            sudo rm -rf /var/www/html/*
-
-            # Copy new files
-            sudo cp -r /home/${{ secrets.EC2_USER }}/react_build/* /var/www/html/
-
-            # Set permissions
-            sudo chown -R www-data:www-data /var/www/html
-
-            # Restart nginx
             sudo systemctl restart nginx
-
-            echo "🚀 React Deployed Successfully!"
+            echo "✅ Deployment complete!"
